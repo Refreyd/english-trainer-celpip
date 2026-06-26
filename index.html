@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CELPIP Cloze — тренажер</title>
+<style>
+  :root{
+    --bg:#14171f; --surface:#1d212c; --surface2:#252a37;
+    --text:#e7e9ee; --muted:#8a909e; --line:#2e3442;
+    --accent:#d8a24a; --good:#3fb27f; --bad:#e5604d;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-text-size-adjust:100%}
+  .wrap{max-width:640px;margin:0 auto;padding:20px 18px 40px;min-height:100vh;display:flex;flex-direction:column}
+  header{margin-bottom:14px}
+  h1{font-size:18px;margin:0 0 2px;letter-spacing:.2px}
+  .sub{font-size:13px;color:var(--muted)}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 10px}
+  .chip{font-size:13px;padding:6px 12px;border:1px solid var(--line);background:var(--surface);color:var(--muted);
+    border-radius:20px;cursor:pointer;user-select:none}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#1a1408;font-weight:600}
+  .bar{display:flex;align-items:center;gap:10px;margin:6px 0 12px;font-size:13px;color:var(--muted)}
+  .bar .count{font-family:var(--mono)}
+  .track{flex:1;height:5px;background:var(--surface2);border-radius:4px;overflow:hidden}
+  .fill{height:100%;width:0;background:var(--accent);transition:width .25s ease}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 18px;flex:1;
+    display:flex;flex-direction:column}
+  .tagrow{display:flex;align-items:center;gap:8px;margin-bottom:16px;min-height:22px}
+  .tag{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);
+    border:1px solid var(--line);padding:3px 9px;border-radius:6px}
+  .tag.warn{color:var(--accent);border-color:var(--accent)}
+  .hint{font-size:14px;color:var(--muted);margin-bottom:6px;min-height:18px}
+  .q{font-size:21px;line-height:1.55;margin:4px 0 20px}
+  .slot{display:inline-block;min-width:60px;border-bottom:2px solid var(--accent);
+    font-family:var(--mono);text-align:center;padding:0 6px;color:var(--accent)}
+  .slot.good{border-color:var(--good);color:var(--good)}
+  .slot.bad{border-color:var(--bad);color:var(--bad)}
+  input{width:100%;font-family:var(--mono);font-size:18px;padding:14px 16px;background:var(--surface2);
+    border:1.5px solid var(--line);border-radius:12px;color:var(--text);outline:none}
+  input:focus{border-color:var(--accent)}
+  .fb{font-size:14px;margin:12px 2px 0;font-family:var(--mono);min-height:20px}
+  .fb.good{color:var(--good)} .fb.bad{color:var(--bad)}
+  .why{font-size:13.5px;line-height:1.5;color:var(--muted);margin:8px 2px 0;
+    border-left:2px solid var(--line);padding-left:10px;min-height:0}
+  .why.show{min-height:20px}
+  .btns{margin-top:auto;display:flex;gap:10px;padding-top:18px}
+  button.act{flex:1;font-size:16px;font-weight:600;padding:15px;border:none;border-radius:12px;cursor:pointer;
+    background:var(--accent);color:#1a1408}
+  button.ghost{background:var(--surface2);color:var(--text);border:1px solid var(--line)}
+  /* end screen */
+  .done h2{font-size:20px;margin:4px 0 2px}
+  .big{font-size:30px;font-family:var(--mono);color:var(--accent);margin:14px 0 4px}
+  .statlist{margin:16px 0 0;display:flex;flex-direction:column;gap:8px}
+  .stat{display:flex;justify-content:space-between;align-items:center;gap:12px;
+    background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px}
+  .stat .ans{font-family:var(--mono);color:var(--accent)}
+  .stat .n{font-family:var(--mono);color:var(--bad);white-space:nowrap}
+  .clean{color:var(--good);font-size:14px;margin-top:12px}
+  .legend{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.5}
+  kbd{font-family:var(--mono);background:var(--surface2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:11px}
+  .err{background:var(--surface);border:1px solid var(--bad);border-radius:12px;padding:20px;color:var(--bad);font-size:14px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>CELPIP Cloze</h1>
+    <div class="sub">Впиши пропущене слово в речення.</div>
+  </header>
+
+  <div class="chips" id="chips"></div>
+
+  <div class="bar">
+    <span class="count" id="count">0 / 0</span>
+    <div class="track"><div class="fill" id="fill"></div></div>
+    <span class="count" id="score">✓ 0</span>
+  </div>
+
+  <!-- картка-оболонка будується один раз, оновлюється текст -->
+  <div class="card" id="card">
+    <div class="tagrow" id="tagrow"></div>
+    <div class="hint" id="hint"></div>
+    <div class="q" id="q"></div>
+    <input id="inp" autocomplete="off" autocorrect="off" autocapitalize="none"
+           spellcheck="false" inputmode="text" enterkeyhint="go" placeholder="впиши слово…">
+    <div class="fb" id="fb"></div>
+    <div class="why" id="why"></div>
+    <div class="btns"><button class="act" id="go">Перевірити</button></div>
+  </div>
+
+  <!-- екран результату -->
+  <div class="card done" id="done" style="display:none"></div>
+
+  <div class="legend">
+    Артиклі: впиши <kbd>a</kbd> / <kbd>an</kbd> / <kbd>the</kbd>, або <kbd>-</kbd> якщо нічого не треба.
+    Дієслова: впиши правильну форму. <kbd>Enter</kbd> — перевірити / далі.
+  </div>
+</div>
+
+<script>
+// ── завантаження даних ──
+if(!window.WORDS || !Array.isArray(window.WORDS)){
+  document.getElementById("card").outerHTML =
+    '<div class="err">Не знайдено <b>words.js</b>. Поклади файл words.js поруч з index.html.</div>';
+  throw new Error("words.js not loaded");
+}
+window.WORDS.forEach((d,i)=>d._id=i);
+
+const LABELS={all:"Все",prep:"Прийменники",art:"Артиклі",verb:"Дієслова"};
+const CATTAG={prep:"prep",art:"article",verb:"verb"};
+let filter="all", queue=[], idx=0, score=0, initialN=0, answered=false, cur=null;
+let wrong={};   // _id -> count
+
+const norm=s=>String(s).toLowerCase().trim().replace(/[—–]/g,"-").replace(/\s+/g," ");
+function accepts(card,val){
+  const v=norm(val);
+  const ok=(Array.isArray(card.en)?card.en:[card.en]).map(norm);
+  if(card.cat==="art" && (v===""||v==="none"||v==="x")) return ok.includes("-");
+  return ok.includes(v);
+}
+function ansDisplay(card){
+  const first=Array.isArray(card.en)?card.en[0]:card.en;
+  return first==="-" ? "— (нічого)" : first;
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+// ── DOM-посилання (оболонка одна, не перебудовується) ──
+const elChips=document.getElementById("chips");
+const elCard=document.getElementById("card");
+const elDone=document.getElementById("done");
+const elTag=document.getElementById("tagrow");
+const elHint=document.getElementById("hint");
+const elQ=document.getElementById("q");
+const elInp=document.getElementById("inp");
+const elFb=document.getElementById("fb");
+const elWhy=document.getElementById("why");
+const elGo=document.getElementById("go");
+
+function buildChips(){
+  elChips.innerHTML="";
+  ["all","prep","art","verb"].forEach(k=>{
+    const c=document.createElement("div");
+    c.className="chip"+(filter===k?" on":"");
+    c.textContent=LABELS[k];
+    c.onclick=()=>{filter=k;start();};
+    elChips.appendChild(c);
+  });
+}
+function start(){
+  buildChips();
+  let pool=window.WORDS.filter(d=>filter==="all"||d.cat===filter);
+  queue=shuffle(pool.slice());
+  idx=0;score=0;initialN=queue.length;wrong={};answered=false;
+  elDone.style.display="none";elCard.style.display="flex";
+  showCard();
+}
+function updateBar(){
+  document.getElementById("count").textContent=`${Math.min(idx+1,queue.length)} / ${queue.length}`;
+  document.getElementById("score").textContent="✓ "+score;
+  document.getElementById("fill").style.width=(queue.length?Math.round(idx/queue.length*100):0)+"%";
+}
+function showCard(){
+  if(idx>=queue.length){return showDone();}
+  cur=queue[idx];answered=false;
+  elTag.innerHTML=`<span class="tag">${CATTAG[cur.cat]||cur.cat}</span>`+
+    (cur.w||cur.warn?`<span class="tag warn">⚠ твоя помилка</span>`:"");
+  elHint.textContent=cur.uk||"";
+  elQ.innerHTML=cur.q[0]+`<span class="slot" id="slot">____</span>`+cur.q[1];
+  elInp.value="";
+  elFb.textContent="";elFb.className="fb";
+  elWhy.textContent="";elWhy.className="why";
+  elGo.textContent="Перевірити";
+  updateBar();
+  elInp.focus();            // фокус не знімаємо між картками → клавіатура не стрибає
+}
+function check(){
+  const val=elInp.value;
+  const slot=document.getElementById("slot");
+  const ok=accepts(cur,val);
+  answered=true;
+  slot.textContent = val.trim()===""?(cur.cat==="art"?"—":"…"):val.trim();
+  if(ok){
+    slot.className="slot good";
+    elFb.className="fb good";elFb.textContent="✓ Правильно";
+    score++;
+  }else{
+    slot.className="slot bad";
+    elFb.className="fb bad";elFb.textContent="✗ Правильно: "+ansDisplay(cur);
+    wrong[cur._id]=(wrong[cur._id]||0)+1;
+    queue.push(cur);        // повертаємо в кінець черги
+  }
+  if(cur.why){elWhy.className="why show";elWhy.textContent="чому: "+cur.why;}
+  document.getElementById("score").textContent="✓ "+score;
+  elGo.textContent="Далі →";
+  elInp.focus();            // тримаємо фокус — без blur
+}
+function next(){idx++;showCard();}
+function onAction(){answered?next():check();}
+
+elGo.onclick=onAction;
+elInp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();onAction();}});
+
+function showDone(){
+  elCard.style.display="none";
+  elDone.style.display="flex";
+  document.getElementById("fill").style.width="100%";
+  const missed=Object.keys(wrong).map(id=>{
+    const card=window.WORDS.find(w=>w._id==id);
+    return {label:card.uk, ans:ansDisplay(card), n:wrong[id]};
+  }).sort((a,b)=>b.n-a.n);
+  const clean=initialN-missed.length;
+
+  let html=`<div class="done">
+     <h2>Раунд завершено</h2>
+     <div class="big">${score} / ${initialN+ (queue.length-initialN)}</div>
+     <div class="clean">Чисто з першого разу: ${clean} / ${initialN}</div>`;
+  if(missed.length){
+    html+=`<div class="sub" style="margin-top:18px;color:var(--muted)">Слабкі місця — дрилити це:</div>
+           <div class="statlist">`;
+    missed.forEach(m=>{
+      html+=`<div class="stat"><span>${m.label} → <span class="ans">${m.ans}</span></span><span class="n">✗ ${m.n}</span></div>`;
+    });
+    html+=`</div>`;
+  }else{
+    html+=`<div class="clean" style="margin-top:18px">Жодної помилки. Чисто! 🎯</div>`;
+  }
+  html+=`</div><div class="btns"><button class="act" id="restart">Почати заново</button></div>`;
+  elDone.innerHTML=html;
+  document.getElementById("restart").onclick=start;
+}
+
+start();
+</script>
+</body>
+</html>
