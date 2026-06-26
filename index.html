@@ -26,7 +26,7 @@
   .bar .count{font-family:var(--mono)}
   .track{flex:1;height:5px;background:var(--surface2);border-radius:4px;overflow:hidden}
   .fill{height:100%;width:0;background:var(--accent);transition:width .25s ease}
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 18px;flex:1;
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 18px;
     display:flex;flex-direction:column}
   .tagrow{display:flex;align-items:center;gap:8px;margin-bottom:16px;min-height:22px}
   .tag{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);
@@ -46,7 +46,7 @@
   .why{font-size:13.5px;line-height:1.5;color:var(--muted);margin:8px 2px 0;
     border-left:2px solid var(--line);padding-left:10px;min-height:0}
   .why.show{min-height:20px}
-  .btns{margin-top:auto;display:flex;gap:10px;padding-top:18px}
+  .btns{display:flex;gap:10px;margin-top:16px}
   button.act{flex:1;font-size:16px;font-weight:600;padding:15px;border:none;border-radius:12px;cursor:pointer;
     background:var(--accent);color:#1a1408}
   button.ghost{background:var(--surface2);color:var(--text);border:1px solid var(--line)}
@@ -99,9 +99,7 @@
     Дієслова: впиши правильну форму. <kbd>Enter</kbd> — перевірити / далі.
   </div>
 </div>
-  
-<script src="words.js"></script>
-  
+
 <script>
 // ── завантаження даних ──
 if(!window.WORDS || !Array.isArray(window.WORDS)){
@@ -238,3 +236,4 @@ start();
 </script>
 </body>
 </html>
+
